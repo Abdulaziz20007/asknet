@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./header.gif" width="120" alt="Cat" />
+  <img src="./header.gif" width="200" alt="Cat" />
 </p>
 
 [circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
