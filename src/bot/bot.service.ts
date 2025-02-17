@@ -13,6 +13,12 @@ export class BotService {
     @InjectBot(BOT_NAME) private readonly bot: Telegraf<Context>
   ) {}
 
+  mainMenu = [
+    ["👤 Profil"],
+    ["ℹ️ Yordam", "📊 Statistika"],
+    ["🫂 Refferal", "💰 Balans"],
+  ];
+
   async onStart(ctx: Context) {
     try {
       const user_id = ctx.from?.id;
@@ -74,8 +80,7 @@ export class BotService {
             `👤 Ism: <b>${user!.real_name}</b>\n` +
             `📞 Telefon: <b>${user!.phone_number}</b>\n` +
             `👥 Jins: <b>${user!.gender === "male" ? "Erkak 👨" : "Ayol 👩‍🦱"}</b>\n` +
-            `📅 Tug'ilgan yil: <b>${user!.birth_year}</b>\n\n` +
-            `🔄 Ma'lumotlaringizni <b>Profil</b> bo'limidan o'zgartirishingiz mumkin`;
+            `📅 Tug'ilgan yil: <b>${user!.birth_year}</b>`;
 
           await ctx.replyWithHTML(userInfo, {
             reply_markup: {
@@ -96,10 +101,7 @@ export class BotService {
         }
       } else if (user.last_state == "finish" && user.status) {
         await ctx.replyWithHTML("Asknetga xush kelibsiz", {
-          ...Markup.keyboard([
-            ["👤 Profil", "💰 Balans"],
-            ["ℹ️ Yordam", "📊 Statistika"],
-          ]).resize(),
+          ...Markup.keyboard(this.mainMenu).resize(),
         });
       } else if (user.last_state == "finish" && !user.status) {
         await ctx.replyWithHTML(
@@ -170,8 +172,7 @@ export class BotService {
             `👤 Ism: <b>${user.real_name}</b>\n` +
             `📞 Telefon: <b>${user.phone_number}</b>\n` +
             `👥 Jins: <b>${user.gender === "male" ? "Erkak 👨" : "Ayol 👩‍🦱"}</b>\n` +
-            `📅 Tug'ilgan yil: <b>${user.birth_year}</b>\n\n` +
-            `🔄 Ma'lumotlaringizni <b>Profil</b> bo'limidan o'zgartirishingiz mumkin`;
+            `📅 Tug'ilgan yil: <b>${user.birth_year}</b>`;
 
           await ctx.replyWithHTML(userInfo, {
             reply_markup: {
@@ -238,13 +239,13 @@ export class BotService {
       } else if (user && user.last_state == "wait") {
         user.last_state = "finish";
         await user.save();
-        await ctx.replyWithHTML(`✅ Muvaffaqiyatli ro'yxatdan o'tdingiz`, {
-          ...Markup.removeKeyboard(),
-          ...Markup.keyboard([
-            ["👤 Profil", "💰 Balans"],
-            ["ℹ️ Yordam", "📊 Statistika"],
-          ]).resize(),
-        });
+        await ctx.replyWithHTML(
+          `✅ Muvaffaqiyatli ro'yxatdan o'tdingiz\n\n🔄 Ma'lumotlaringizni <b>Profil</b> bo'limidan o'zgartirishingiz mumkin`,
+          {
+            ...Markup.removeKeyboard(),
+            ...Markup.keyboard(this.mainMenu).resize(),
+          }
+        );
       }
     } catch (error) {
       console.log("onActionAccept error: ", error);

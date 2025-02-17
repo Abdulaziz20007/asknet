@@ -3,11 +3,12 @@ import { ConfigModule } from "@nestjs/config";
 import { MongooseModule } from "@nestjs/mongoose";
 import { AdminModule } from "./admin/admin.module";
 import { AuthModule } from "./auth/auth.module";
-import { CatModule } from "./cat/cat.module";
-import { OwnerModule } from "./owner/owner.module";
 import { BotModule } from "./bot/bot.module";
 import { TelegrafModule } from "nestjs-telegraf";
 import { BOT_NAME } from "./app.constants";
+import { ClientModule } from "./client/client.module";
+import { SurveyModule } from "./survey/survey.module";
+import { StatisticModule } from "./statistic/statistic.module";
 
 @Module({
   imports: [
@@ -22,9 +23,10 @@ import { BOT_NAME } from "./app.constants";
     MongooseModule.forRoot(process.env.MONGO_URI!),
     AdminModule,
     AuthModule,
-    CatModule,
-    OwnerModule,
     BotModule,
+    ClientModule,
+    SurveyModule,
+    StatisticModule,
   ],
   controllers: [],
   providers: [],

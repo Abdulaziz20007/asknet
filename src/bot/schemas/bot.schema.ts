@@ -41,6 +41,9 @@ export class Bot {
   @Prop()
   balance: number;
 
+  @Prop({ unique: true })
+  refferal_code: string;
+
   @Prop()
   offer_code: string;
 }
