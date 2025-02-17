@@ -42,7 +42,7 @@ async function start() {
       console.log(`Swagger http://localhost:${PORT}/api/docs`);
     });
   } catch (error) {
-    console.error("❌ Error starting server:", error);
+    console.error("Error starting server:", error);
   }
 }
 
