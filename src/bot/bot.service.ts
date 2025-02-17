@@ -30,18 +30,84 @@ export class BotService {
           balance: 0,
         });
         await ctx.reply(
-          "Botga hush kelibsiz, ILtimos o'zingizni haqiqiy ismingizni kiriting:"
+          `Salom ${ctx.from?.first_name}, botga xush kelibsiz\n\nIltimos haqiqiy ismingizni kiriting:`
         );
       } else if (user && !user.status) {
         user.status = true;
         await user.save();
 
-        await ctx.reply("Qaytganingiz bilan tabriklayman");
+        await ctx.replyWithHTML("Asknetga xush kelibsiz");
       } else if (user.last_state == "real_name" && user.status) {
-        await ctx.reply(`Iltimos haqiqiy ismingizni kiriting:`, {
+        await ctx.replyWithHTML(`Iltimos haqiqiy ismingizni kiriting:`, {
           ...Markup.removeKeyboard(),
         });
         await user.save();
+      } else if (user.last_state == "gender") {
+        await ctx.reply(`Iltimos jinsingizni tanlang:`, {
+          reply_markup: {
+            inline_keyboard: [
+              [
+                { text: "Erkak 👨", callback_data: `male_${user.user_id}` },
+                { text: "Ayol 👩‍🦱", callback_data: `female_${user.user_id}` },
+              ],
+            ],
+          },
+        });
+      } else if (user.last_state == "phone_number") {
+        await ctx.replyWithHTML(
+          `Iltimos <b>📱 Kontaktni ulashish</b> tugmasini bosing:`,
+          {
+            ...Markup.keyboard([
+              Markup.button.contactRequest("📱 Kontaktni ulashish"),
+            ]).resize(),
+          }
+        );
+      } else if (user.last_state == "birth_year") {
+        await ctx.reply(`Tug'ilgan yilingizni kiriting:`, {
+          ...Markup.removeKeyboard(),
+        });
+      } else if (user.last_state == "wait") {
+        const user = await this.botModel.findOne({ user_id: String(user_id) });
+        if (!user || user.last_state == "wait") {
+          const userInfo =
+            `✅ Ma'lumotlar qabul qilindi!\n\n` +
+            `👤 Ism: <b>${user!.real_name}</b>\n` +
+            `📞 Telefon: <b>${user!.phone_number}</b>\n` +
+            `👥 Jins: <b>${user!.gender === "male" ? "Erkak 👨" : "Ayol 👩‍🦱"}</b>\n` +
+            `📅 Tug'ilgan yil: <b>${user!.birth_year}</b>\n\n` +
+            `🔄 Ma'lumotlaringizni <b>Profil</b> bo'limidan o'zgartirishingiz mumkin`;
+
+          await ctx.replyWithHTML(userInfo, {
+            reply_markup: {
+              inline_keyboard: [
+                [
+                  {
+                    text: "Tasdiqlash ✅",
+                    callback_data: `accept_${user!.user_id}`,
+                  },
+                  {
+                    text: "Qaytadan boshlash 🔄",
+                    callback_data: `edit_${user!.user_id}`,
+                  },
+                ],
+              ],
+            },
+          });
+        }
+      } else if (user.last_state == "finish" && user.status) {
+        await ctx.replyWithHTML("Asknetga xush kelibsiz", {
+          ...Markup.keyboard([
+            ["👤 Profil", "💰 Balans"],
+            ["ℹ️ Yordam", "📊 Statistika"],
+          ]).resize(),
+        });
+      } else if (user.last_state == "finish" && !user.status) {
+        await ctx.replyWithHTML(
+          "Asknetga xush kelibsiz.\n\nSiz ro'yxatdan o'tmagansiz, Iltimos /start buyrug'ini bosing",
+          {
+            ...Markup.keyboard([["/start"]]).resize(),
+          }
+        );
       }
     } catch (error) {
       console.log("onStart error: ", error);
@@ -67,11 +133,14 @@ export class BotService {
         user.last_state = "phone_number";
         await user.save();
 
-        await ctx.reply(`📞 Iltimos telefon raqamingizni ulashing:`, {
-          ...Markup.keyboard([
-            Markup.button.contactRequest("📞Kontaktni ulashish"),
-          ]).resize(),
-        });
+        await ctx.replyWithHTML(
+          `Iltimos <b>📱 Kontaktni ulashish</b> tugmasini bosing:`,
+          {
+            ...Markup.keyboard([
+              Markup.button.contactRequest("📱 Kontaktni ulashish"),
+            ]).resize(),
+          }
+        );
       }
     } catch (error) {
       console.log("onActionGender error: ", error);
@@ -93,22 +162,32 @@ export class BotService {
           );
         } else if (user && user.last_state == "birth_year") {
           user.birth_year = ctx.message.text;
-          user.last_state = "finish";
+          user.last_state = "wait";
           await user.save();
 
           const userInfo =
-            `✅ Ro'yxatdan o'tish muvaffaqiyatli yakunlandi!\n\n` +
-            `👤 Ismingiz: ${user.real_name}\n` +
-            `📞 Telefon: ${user.phone_number}\n` +
-            `👥 Jins: ${user.gender === "male" ? "Erkak" : "Ayol"}\n` +
-            `📅 Tug'ilgan yil: ${user.birth_year}\n\n` +
-            `🔄 Ma'lumotlarni o'zgartirish uchun /start buyrug'ini bosing`;
+            `✅ Ma'lumotlar qabul qilindi!\n\n` +
+            `👤 Ism: <b>${user.real_name}</b>\n` +
+            `📞 Telefon: <b>${user.phone_number}</b>\n` +
+            `👥 Jins: <b>${user.gender === "male" ? "Erkak 👨" : "Ayol 👩‍🦱"}</b>\n` +
+            `📅 Tug'ilgan yil: <b>${user.birth_year}</b>\n\n` +
+            `🔄 Ma'lumotlaringizni <b>Profil</b> bo'limidan o'zgartirishingiz mumkin`;
 
-          await ctx.reply(userInfo, {
-            ...Markup.keyboard([
-              ["👤 Profil", "💰 Balans"],
-              ["ℹ️ Yordam", "📊 Statistika"],
-            ]).resize(),
+          await ctx.replyWithHTML(userInfo, {
+            reply_markup: {
+              inline_keyboard: [
+                [
+                  {
+                    text: "Tasdiqlash ✅",
+                    callback_data: `accept_${user.user_id}`,
+                  },
+                  {
+                    text: "Qaytadan boshlash 🔄",
+                    callback_data: `edit_${user.user_id}`,
+                  },
+                ],
+              ],
+            },
           });
         }
       }
@@ -125,7 +204,7 @@ export class BotService {
 
         if (!user || !user.status) {
           await ctx.reply(
-            "Siz ro'yxatdan o'tmagansiz yoki faol emassiz, Iltimos oldin botni qayta ishga tushuring\n /start",
+            "Siz ro'yxatdan o'tmagansiz, Iltimos /start buyrug'ini bosing",
             {
               ...Markup.keyboard([["/start"]]),
             }
@@ -135,13 +214,63 @@ export class BotService {
           user.last_state = "birth_year";
           await user.save();
 
-          await ctx.reply(`Tug'ilgan yilingizni kiriting masalan(2002):`, {
+          await ctx.reply(`Tug'ilgan yilingizni kiriting:`, {
             ...Markup.removeKeyboard(),
           });
         }
       }
     } catch (error) {
       console.log("onContact error: ", error);
+    }
+  }
+
+  async onActionAccept(ctx: Context) {
+    try {
+      const user_id = ctx.callbackQuery!["data"].split("_")[1];
+      const user = await this.botModel.findOne({ user_id: String(user_id) });
+      if (!user || !user.status) {
+        await ctx.reply(
+          "Siz ro'yxatdan o'tmagansiz, Iltimos /start buyrug'ini bosing",
+          {
+            ...Markup.keyboard([["/start"]]),
+          }
+        );
+      } else if (user && user.last_state == "wait") {
+        user.last_state = "finish";
+        await user.save();
+        await ctx.replyWithHTML(`✅ Muvaffaqiyatli ro'yxatdan o'tdingiz`, {
+          ...Markup.removeKeyboard(),
+          ...Markup.keyboard([
+            ["👤 Profil", "💰 Balans"],
+            ["ℹ️ Yordam", "📊 Statistika"],
+          ]).resize(),
+        });
+      }
+    } catch (error) {
+      console.log("onActionAccept error: ", error);
+    }
+  }
+
+  async onActionEdit(ctx: Context) {
+    try {
+      const user_id = ctx.callbackQuery!["data"].split("_")[1];
+      const user = await this.botModel.findOne({ user_id: String(user_id) });
+      if (!user || !user.status) {
+        await ctx.reply(
+          "Siz ro'yxatdan o'tmagansiz, Iltimos /start buyrug'ini bosing",
+          {
+            ...Markup.keyboard([["/start"]]),
+          }
+        );
+      } else if (user && user.last_state == "wait") {
+        user.last_state = "real_name";
+        await user.save();
+        await ctx.replyWithHTML(`Iltimos haqiqiy ismingizni kiriting:`, {
+          ...Markup.removeKeyboard(),
+        });
+      }
+    } catch (error) {
+      console.log("onActionEdit error: ", error);
     }
   }
 
@@ -153,7 +282,7 @@ export class BotService {
 
         if (!user || !user.status) {
           await ctx.reply(
-            "Siz ro'yxatdan o'tmagansiz yoki faol emassiz, Iltimos oldin botni qayta ishga tushuring\n /start",
+            "Siz ro'yxatdan o'tmagansiz, Iltimos /start buyrug'ini bosing",
             {
               ...Markup.keyboard([["/start"]]),
             }
@@ -163,12 +292,12 @@ export class BotService {
           user.last_state = "gender";
           await user.save();
 
-          await ctx.reply(`Jinsingizni tasdiqlang:`, {
+          await ctx.reply(`Jinsingizni tanlang:`, {
             reply_markup: {
               inline_keyboard: [
                 [
-                  { text: "Erkak ", callback_data: `male_${user.user_id}` },
-                  { text: "Ayol", callback_data: `female_${user.user_id}` },
+                  { text: "Erkak 👨", callback_data: `male_${user.user_id}` },
+                  { text: "Ayol 👩‍🦱", callback_data: `female_${user.user_id}` },
                 ],
               ],
             },
